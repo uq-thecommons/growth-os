@@ -29,7 +29,7 @@ export default function CommandCenter() {
 
   const seedIfNeeded = async () => {
     try {
-      await axios.post(`${API}/seed`, {}, { withCredentials: true });
+      await axios.post(`${API}/seed`, {});
     } catch (error) {
       // Ignore if already seeded
     }

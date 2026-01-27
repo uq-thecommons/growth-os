@@ -72,7 +72,7 @@ export default function ExperimentsPage() {
     try {
       const response = await axios.get(
         `${API}/workspaces/${workspaceId}/experiments`,
-        { withCredentials: true }
+        
       );
       setExperiments(response.data);
     } catch (error) {
@@ -87,7 +87,7 @@ export default function ExperimentsPage() {
       await axios.post(
         `${API}/workspaces/${workspaceId}/experiments`,
         newExperiment,
-        { withCredentials: true }
+        
       );
       toast.success("Experiment created");
       setShowCreateDialog(false);
@@ -108,7 +108,7 @@ export default function ExperimentsPage() {
       await axios.put(
         `${API}/workspaces/${workspaceId}/experiments/${expId}`,
         { status: newStatus },
-        { withCredentials: true }
+        
       );
       fetchExperiments();
     } catch (error) {
@@ -122,7 +122,7 @@ export default function ExperimentsPage() {
       await axios.post(
         `${API}/workspaces/${workspaceId}/experiments/${selectedExperiment.experiment_id}/decision`,
         decision,
-        { withCredentials: true }
+        
       );
       toast.success("Decision recorded");
       setShowDecisionDialog(false);

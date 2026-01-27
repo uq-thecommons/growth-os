@@ -33,7 +33,7 @@ export default function ClientPortal() {
     try {
       const response = await axios.get(
         `${API}/client-portal/${workspaceId}`,
-        { withCredentials: true }
+        
       );
       setData(response.data);
     } catch (error) {

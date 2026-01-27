@@ -93,7 +93,7 @@ export default function FunnelBuilder() {
       await axios.post(
         `${API}/workspaces/${workspaceId}/funnels`,
         newFunnel,
-        { withCredentials: true }
+        
       );
       toast.success("Funnel created");
       setShowFunnelDialog(false);
@@ -127,7 +127,7 @@ export default function FunnelBuilder() {
       await axios.post(
         `${API}/workspaces/${workspaceId}/activations`,
         payload,
-        { withCredentials: true }
+        
       );
       toast.success("Activation definition created");
       setShowActivationDialog(false);

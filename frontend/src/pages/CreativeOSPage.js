@@ -76,7 +76,7 @@ export default function CreativeOSPage() {
     try {
       const response = await axios.get(
         `${API}/workspaces/${workspaceId}/assets`,
-        { withCredentials: true }
+        
       );
       setAssets(response.data);
     } catch (error) {
@@ -91,7 +91,7 @@ export default function CreativeOSPage() {
       await axios.post(
         `${API}/workspaces/${workspaceId}/assets`,
         newAsset,
-        { withCredentials: true }
+        
       );
       toast.success("Asset created");
       setShowUploadDialog(false);
@@ -114,7 +114,7 @@ export default function CreativeOSPage() {
       await axios.put(
         `${API}/workspaces/${workspaceId}/assets/${assetId}`,
         { is_client_visible: !currentValue },
-        { withCredentials: true }
+        
       );
       fetchAssets();
       toast.success(

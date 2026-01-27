@@ -63,7 +63,7 @@ export default function ReportsPage() {
 
   const fetchData = async () => {
     try {
-      const wsRes = await axios.get(`${API}/workspaces`, { withCredentials: true });
+      const wsRes = await axios.get(`${API}/workspaces`);
       setWorkspaces(wsRes.data);
 
       // Fetch reports for each workspace
@@ -72,7 +72,7 @@ export default function ReportsPage() {
         try {
           const reportsRes = await axios.get(
             `${API}/workspaces/${ws.workspace_id}/reports`,
-            { withCredentials: true }
+            
           );
           allReports.push(
             ...reportsRes.data.map((r) => ({
@@ -101,7 +101,7 @@ export default function ReportsPage() {
           week_start: newReport.week_start.toISOString(),
           week_end: newReport.week_end.toISOString(),
         },
-        { withCredentials: true }
+        
       );
       toast.success("Report created");
       setShowCreateDialog(false);
@@ -117,7 +117,7 @@ export default function ReportsPage() {
       const response = await axios.post(
         `${API}/workspaces/${workspaceId}/reports/${reportId}/generate-draft`,
         {},
-        { withCredentials: true }
+        
       );
       toast.success("AI draft generated");
       fetchData();
@@ -134,7 +134,7 @@ export default function ReportsPage() {
       await axios.post(
         `${API}/workspaces/${workspaceId}/reports/${reportId}/approve`,
         {},
-        { withCredentials: true }
+        
       );
       toast.success("Report approved");
       fetchData();
@@ -148,7 +148,7 @@ export default function ReportsPage() {
       await axios.put(
         `${API}/workspaces/${workspaceId}/reports/${reportId}`,
         { status },
-        { withCredentials: true }
+        
       );
       toast.success("Report status updated");
       fetchData();

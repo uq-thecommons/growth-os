@@ -63,9 +63,9 @@ export default function AdminPage() {
   const fetchData = async () => {
     try {
       const [usersRes, wsRes, logsRes] = await Promise.all([
-        axios.get(`${API}/admin/users`, { withCredentials: true }),
-        axios.get(`${API}/workspaces`, { withCredentials: true }),
-        axios.get(`${API}/audit-logs?limit=20`, { withCredentials: true }),
+        axios.get(`${API}/admin/users`),
+        axios.get(`${API}/workspaces`),
+        axios.get(`${API}/audit-logs?limit=20`),
       ]);
       setUsers(usersRes.data);
       setWorkspaces(wsRes.data);
@@ -86,7 +86,7 @@ export default function AdminPage() {
           role: newRole.role,
           workspace_id: newRole.workspace_id || null,
         },
-        { withCredentials: true }
+        
       );
       toast.success("Role assigned");
       setShowRoleDialog(false);
@@ -101,7 +101,7 @@ export default function AdminPage() {
     try {
       await axios.delete(
         `${API}/admin/users/${userId}/roles/${assignmentId}`,
-        { withCredentials: true }
+        
       );
       toast.success("Role removed");
       fetchData();

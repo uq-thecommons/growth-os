@@ -54,7 +54,7 @@ export default function DistributionPage() {
       await axios.post(
         `${API}/workspaces/${workspaceId}/channels/${channelId}/sync`,
         {},
-        { withCredentials: true }
+        
       );
       toast.success("Channel synced successfully");
       fetchData();

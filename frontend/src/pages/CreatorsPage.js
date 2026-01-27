@@ -89,7 +89,7 @@ export default function CreatorsPage() {
     try {
       const response = await axios.get(
         `${API}/workspaces/${workspaceId}/creators`,
-        { withCredentials: true }
+        
       );
       setCreators(response.data);
     } catch (error) {
@@ -110,7 +110,7 @@ export default function CreatorsPage() {
       await axios.post(
         `${API}/workspaces/${workspaceId}/creators`,
         payload,
-        { withCredentials: true }
+        
       );
       toast.success("Creator added");
       setShowCreateDialog(false);
@@ -135,7 +135,7 @@ export default function CreatorsPage() {
       await axios.put(
         `${API}/workspaces/${workspaceId}/creators/${creatorId}`,
         { pipeline_status: newStatus },
-        { withCredentials: true }
+        
       );
       fetchCreators();
       toast.success("Status updated");

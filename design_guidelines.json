@@ -1,0 +1,154 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "thecommons. Growth OS",
+      "archetype": "Swiss & High-Contrast",
+      "core_principles": [
+        "Fusion over Imitation: Mix Swiss Poster aesthetics with SaaS density.",
+        "Content is King: Data is the art. No decoration.",
+        "Contrast: Extreme Black & White. No greys in the middle.",
+        "Grid: Mathematical, visible, and rigid."
+      ]
+    },
+    "typography": {
+      "font_family": {
+        "headings": "Manrope, sans-serif",
+        "body": "Inter, sans-serif",
+        "mono": "JetBrains Mono, monospace"
+      },
+      "weights": {
+        "headings": "font-bold (700) or font-light (300) - High Contrast",
+        "body": "font-normal (400)",
+        "strong": "font-semibold (600)"
+      },
+      "scale": {
+        "h1": "text-5xl md:text-6xl tracking-tighter leading-none",
+        "h2": "text-3xl md:text-4xl tracking-tight",
+        "h3": "text-xl md:text-2xl tracking-tight",
+        "body": "text-base leading-relaxed",
+        "small": "text-sm text-muted-foreground",
+        "mono": "text-xs tracking-wide uppercase"
+      }
+    },
+    "colors": {
+      "palette": {
+        "background": "#000000",
+        "foreground": "#FFFFFF",
+        "card": "#09090b",
+        "card_foreground": "#FFFFFF",
+        "popover": "#000000",
+        "popover_foreground": "#FFFFFF",
+        "primary": "#FFFFFF",
+        "primary_foreground": "#000000",
+        "secondary": "#27272a",
+        "secondary_foreground": "#FFFFFF",
+        "muted": "#27272a",
+        "muted_foreground": "#a1a1aa",
+        "accent": "#27272a",
+        "accent_foreground": "#FFFFFF",
+        "destructive": "#ef4444",
+        "destructive_foreground": "#FFFFFF",
+        "border": "#27272a",
+        "input": "#27272a",
+        "ring": "#FFFFFF"
+      },
+      "chart_palette": [
+        "#FFFFFF",
+        "#a1a1aa",
+        "#52525b",
+        "#27272a",
+        "#18181b"
+      ],
+      "rules": [
+        "NO GRADIENTS. Flat colors only.",
+        "Use texture (noise) instead of color for depth.",
+        "Primary action buttons must be White with Black text (Inverse).",
+        "Borders are critical for separation in a monochrome UI."
+      ]
+    },
+    "layout": {
+      "spacing": {
+        "container_padding": "p-6 md:p-12",
+        "section_gap": "gap-8 md:gap-16",
+        "item_gap": "gap-4"
+      },
+      "grids": {
+        "dashboard": "grid grid-cols-1 md:grid-cols-12 gap-4",
+        "card_grid": "grid grid-cols-1 md:grid-cols-3 gap-6",
+        "detail_view": "grid grid-cols-1 lg:grid-cols-3 gap-8"
+      },
+      "border_radius": {
+        "default": "rounded-none",
+        "card": "rounded-sm",
+        "button": "rounded-full"
+      }
+    },
+    "components": {
+      "buttons": {
+        "primary": "bg-white text-black hover:bg-zinc-200 rounded-full px-8 font-medium transition-transform active:scale-95",
+        "secondary": "bg-transparent border border-zinc-800 text-white hover:bg-zinc-900 rounded-full px-8",
+        "ghost": "text-zinc-400 hover:text-white hover:bg-zinc-900/50"
+      },
+      "cards": {
+        "style": "bg-black border border-zinc-800 p-6 relative overflow-hidden group",
+        "hover": "hover:border-zinc-600 transition-colors duration-300"
+      },
+      "inputs": {
+        "style": "bg-black border border-zinc-800 focus:border-white focus:ring-0 rounded-none h-12 px-4 text-white placeholder:text-zinc-600"
+      },
+      "navigation": {
+        "sidebar": "bg-black border-r border-zinc-800 w-64 hidden md:flex flex-col",
+        "mobile_nav": "bg-black/90 backdrop-blur-xl border-b border-zinc-800"
+      }
+    },
+    "visual_enhancers": {
+      "textures": [
+        "Grain overlay: opacity-5 pointer-events-none fixed inset-0 z-50 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"
+      ],
+      "effects": [
+        "Tracing Beam: Animated border on active cards.",
+        "Scanlines: Subtle repeating linear gradient for 'Terminal' sections."
+      ]
+    },
+    "assets": {
+      "images": {
+        "textures": [
+          "https://images.unsplash.com/photo-1637909336971-9367a156f4c5?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "https://images.unsplash.com/photo-1738918941142-00fe2cbe3c0d?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "https://images.unsplash.com/photo-1722199617938-5d299b43371c?crop=entropy&cs=srgb&fm=jpg&q=85"
+        ],
+        "avatars": [
+          "https://images.unsplash.com/photo-1670881391783-9c55ba592f93?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "https://images.unsplash.com/photo-1766022411633-e88e3650538b?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "https://images.unsplash.com/photo-1763757321139-e7e4de128cd9?crop=entropy&cs=srgb&fm=jpg&q=85",
+          "https://images.unsplash.com/photo-1585402627084-e80d83061b76?crop=entropy&cs=srgb&fm=jpg&q=85"
+        ],
+        "logo": "https://customer-assets.emergentagent.com/job_748ef24b-f1b0-4292-8fd8-756f578df920/artifacts/w50htqda_thecommons_Logo.png"
+      },
+      "icons": "Lucide React (Default) or Phosphor Icons (for thinner weights)"
+    },
+    "motion": {
+      "transitions": "transition-all duration-200 ease-out",
+      "hover_lift": "hover:-translate-y-1",
+      "page_enter": "animate-in fade-in slide-in-from-bottom-4 duration-500"
+    }
+  },
+  "instructions_to_main_agent": [
+    "1. THEME SETUP: Update `tailwind.config.js` and `index.css` immediately to enforce the Monochrome palette. Remove all default Shadcn 'slate/blue' tints. Use pure Zinc/Neutral scales.",
+    "2. FONT INSTALLATION: Add 'Manrope' and 'JetBrains Mono' via Google Fonts in `index.html` or CSS import.",
+    "3. LAYOUT: Implement the 'Command Center' using the Bento Grid strategy defined in the design system.",
+    "4. COMPONENTS: Customize all Shadcn components to remove 'rounded-md' and replace with 'rounded-sm' or 'rounded-none' for a sharper, Swiss look.",
+    "5. CHARTS: When implementing Recharts, use the `chart_palette` defined above. Do not use random colors.",
+    "6. CLIENT PORTAL: This must be visually distinct. Use MORE whitespace and larger typography than the internal dashboard.",
+    "7. IMAGES: Use the provided texture images for empty states or card backgrounds in the 'Creative OS' section."
+  ],
+  "universal_guidelines": [
+    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
+    "Don't make generic centered layouts. Use asymmetry.",
+    "Create depth through layered design elements with z-index hierarchy.",
+    "Use glass-morphism effects with backdrop filters (12-24px blur) for floating navs.",
+    "Every interaction needs micro-animations.",
+    "Use 2-3x more spacing than feels comfortable.",
+    "All interactive elements MUST include `data-testid`."
+  ]
+}

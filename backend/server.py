@@ -1176,8 +1176,9 @@ async def create_report(
     if isinstance(report_dict["week_end"], datetime):
         report_dict["week_end"] = report_dict["week_end"].isoformat()
     
-    await db.weekly_reports.insert_one(report_dict)
-    return report_dict
+    # Insert and return without MongoDB ObjectId
+    result = await db.weekly_reports.insert_one(report_dict)
+    return {k: v for k, v in report_dict.items() if k != "_id"}
 
 
 @api_router.get("/workspaces/{workspace_id}/reports/{report_id}")

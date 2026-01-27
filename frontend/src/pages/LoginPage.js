@@ -29,11 +29,9 @@ export default function LoginPage() {
         ? { email: formData.email, password: formData.password }
         : formData;
 
-      const response = await axios.post(`${API}${endpoint}`, payload, {
-        withCredentials: true,
-      });
+      const response = await axios.post(`${API}${endpoint}`, payload);
 
-      // Store token in localStorage as backup for cross-origin cookie issues
+      // Store token in localStorage
       if (response.data.access_token) {
         localStorage.setItem('session_token', response.data.access_token);
       }

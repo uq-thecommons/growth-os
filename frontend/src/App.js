@@ -57,9 +57,13 @@ function AuthCallback() {
       try {
         const response = await axios.post(
           `${API}/auth/session`,
-          { session_id: sessionId },
-          { withCredentials: true }
+          { session_id: sessionId }
         );
+        
+        // Store token
+        if (response.data.session_token) {
+          localStorage.setItem('session_token', response.data.session_token);
+        }
 
         navigate("/", { state: { user: response.data } });
       } catch (error) {

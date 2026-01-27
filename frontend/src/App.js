@@ -22,6 +22,15 @@ import FunnelBuilder from "./pages/FunnelBuilder";
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;
 
+// Configure axios to include auth token in all requests
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('session_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 // Auth context
 export const AuthContext = React.createContext(null);
 

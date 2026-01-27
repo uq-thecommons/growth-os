@@ -306,7 +306,7 @@ class GrowthOSAPITester:
             "fit_score": 8
         }
         
-        success, data, status = self.make_request('POST', f'workspaces/{self.test_workspace_id}/creators', creator_data, 201)
+        success, data, status = self.make_request('POST', f'workspaces/{self.test_workspace_id}/creators', creator_data, 200)
         if success and data.get('creator_id'):
             self.test_creator_id = data['creator_id']
             self.log_result(

@@ -225,8 +225,8 @@ class GrowthOSAPITester:
             self.log_result(
                 "Create Experiment", 
                 False,
-                f"Status: {status}",
-                f"Failed to create experiment: {data.get('detail', 'Unknown error')}"
+                f"Status: {status}, Response: {data}",
+                f"Failed to create experiment: {data.get('detail', data.get('error', 'Unknown error'))}"
             )
 
         # Update experiment status

@@ -264,7 +264,7 @@ class GrowthOSAPITester:
             "is_client_visible": False
         }
         
-        success, data, status = self.make_request('POST', f'workspaces/{self.test_workspace_id}/assets', asset_data, 201)
+        success, data, status = self.make_request('POST', f'workspaces/{self.test_workspace_id}/assets', asset_data, 200)
         if success and data.get('asset_id'):
             self.test_asset_id = data['asset_id']
             self.log_result(

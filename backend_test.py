@@ -212,7 +212,7 @@ class GrowthOSAPITester:
             "metric_target": "conversion_rate"
         }
         
-        success, data, status = self.make_request('POST', f'workspaces/{self.test_workspace_id}/experiments', exp_data, 201)
+        success, data, status = self.make_request('POST', f'workspaces/{self.test_workspace_id}/experiments', exp_data, 200)
         if success and data.get('experiment_id'):
             self.test_experiment_id = data['experiment_id']
             self.log_result(

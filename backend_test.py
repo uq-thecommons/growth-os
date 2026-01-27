@@ -60,10 +60,15 @@ class GrowthOSAPITester:
                 response = requests.delete(url, headers=headers)
             
             success = response.status_code == expected_status
-            return success, response.json() if response.content else {}, response.status_code
+            try:
+                response_data = response.json() if response.content else {}
+            except:
+                response_data = {"raw_response": response.text}
+            
+            return success, response_data, response.status_code
             
         except Exception as e:
-            return False, {}, str(e)
+            return False, {"error": str(e)}, str(e)
 
     def test_health_check(self):
         """Test health endpoint"""

@@ -1090,8 +1090,9 @@ async def create_creator(
         "updated_at": now_utc().isoformat()
     })
     
-    await db.creators.insert_one(creator_dict)
-    return creator_dict
+    # Insert and return without MongoDB ObjectId
+    result = await db.creators.insert_one(creator_dict)
+    return {k: v for k, v in creator_dict.items() if k != "_id"}
 
 
 @api_router.put("/workspaces/{workspace_id}/creators/{creator_id}")

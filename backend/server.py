@@ -926,8 +926,9 @@ async def create_asset(
         "created_by": user["user_id"]
     })
     
-    await db.assets.insert_one(asset_dict)
-    return asset_dict
+    # Insert and return without MongoDB ObjectId
+    result = await db.assets.insert_one(asset_dict)
+    return {k: v for k, v in asset_dict.items() if k != "_id"}
 
 
 @api_router.put("/workspaces/{workspace_id}/assets/{asset_id}")

@@ -1724,11 +1724,22 @@ async def health_check():
 # Include router
 app.include_router(api_router)
 
-# CORS middleware
+# CORS middleware - handle dynamic origins for credentials
+cors_origins = os.environ.get('CORS_ORIGINS', '*')
+if cors_origins == '*':
+    # For development, allow common localhost ports
+    cors_origins_list = [
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://127.0.0.1:3000",
+    ]
+else:
+    cors_origins_list = cors_origins.split(',')
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=os.environ.get('CORS_ORIGINS', '*').split(','),
+    allow_origins=cors_origins_list,
     allow_methods=["*"],
     allow_headers=["*"],
 )

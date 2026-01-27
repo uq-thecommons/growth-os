@@ -33,6 +33,11 @@ export default function LoginPage() {
         withCredentials: true,
       });
 
+      // Store token in localStorage as backup for cross-origin cookie issues
+      if (response.data.access_token) {
+        localStorage.setItem('session_token', response.data.access_token);
+      }
+
       toast.success(isLogin ? "Welcome back!" : "Account created!");
       navigate("/", { state: { user: response.data.user } });
     } catch (error) {

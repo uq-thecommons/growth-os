@@ -616,7 +616,8 @@ async def create_experiment(
         "created_by": user["user_id"]
     })
     
-    await db.experiments.insert_one(exp_dict)
+    # Insert and get the result without MongoDB ObjectId
+    result = await db.experiments.insert_one(exp_dict)
     
     # Log changelog
     await db.changelog_events.insert_one({
@@ -629,7 +630,8 @@ async def create_experiment(
         "created_by": user["user_id"]
     })
     
-    return exp_dict
+    # Return the dict without MongoDB ObjectId
+    return {k: v for k, v in exp_dict.items() if k != "_id"}
 
 
 @api_router.get("/workspaces/{workspace_id}/experiments/{experiment_id}")

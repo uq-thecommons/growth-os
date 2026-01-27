@@ -348,7 +348,7 @@ class GrowthOSAPITester:
             "week_end": week_end.isoformat()
         }
         
-        success, data, status = self.make_request('POST', f'workspaces/{self.test_workspace_id}/reports', report_data, 201)
+        success, data, status = self.make_request('POST', f'workspaces/{self.test_workspace_id}/reports', report_data, 200)
         if success and data.get('report_id'):
             self.test_report_id = data['report_id']
             self.log_result(

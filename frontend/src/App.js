@@ -95,14 +95,7 @@ function ProtectedRoute({ children }) {
 
     const checkAuth = async () => {
       try {
-        // Try with cookie first, then localStorage token
-        const token = localStorage.getItem('session_token');
-        const headers = token ? { Authorization: `Bearer ${token}` } : {};
-        
-        const response = await axios.get(`${API}/auth/me`, {
-          withCredentials: true,
-          headers
-        });
+        const response = await axios.get(`${API}/auth/me`);
         setUser(response.data);
         setIsAuthenticated(true);
       } catch (error) {

@@ -51,12 +51,7 @@ export default function DashboardLayout({ children }) {
 
   const fetchWorkspaces = async () => {
     try {
-      const token = localStorage.getItem('session_token');
-      const headers = token ? { Authorization: `Bearer ${token}` } : {};
-      const response = await axios.get(`${API}/workspaces`, {
-        withCredentials: true,
-        headers
-      });
+      const response = await axios.get(`${API}/workspaces`);
       setWorkspaces(response.data);
       if (response.data.length > 0 && !workspaceId) {
         setCurrentWorkspace(response.data[0]);
@@ -68,7 +63,7 @@ export default function DashboardLayout({ children }) {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${API}/auth/logout`, {}, { withCredentials: true });
+      await axios.post(`${API}/auth/logout`, {});
       localStorage.removeItem('session_token');
       setUser(null);
       navigate("/login");

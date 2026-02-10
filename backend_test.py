@@ -686,9 +686,8 @@ class GrowthOSAPITester:
                 f"Growth Lead failed to create workspace: {status}"
             )
             
-            # Test Growth Lead can manage integrations
-            if success and data.get('workspace_id'):
-                test_ws_id = data['workspace_id']
+            # Test Growth Lead can manage integrations using existing workspace
+            if self.test_workspace_id:
                 integration_config = {
                     "platform": "ga4",
                     "credentials": {"GA4_PROPERTY_ID": "test123"}
@@ -696,7 +695,7 @@ class GrowthOSAPITester:
                 
                 success, data, status = self.make_request(
                     'POST', 
-                    f'workspaces/{test_ws_id}/integrations', 
+                    f'workspaces/{self.test_workspace_id}/integrations', 
                     integration_config
                 )
                 
@@ -716,6 +715,50 @@ class GrowthOSAPITester:
                 False,
                 f"Status: {status}",
                 f"Failed to login as Growth Lead: {data.get('detail', 'Unknown error')}"
+            )
+
+        # Test with Analyst/Ops credentials
+        analyst_data = {
+            "email": "analyst@thecommons.io",
+            "password": "analyst123"
+        }
+        
+        success, data, status = self.make_request('POST', 'auth/login', analyst_data)
+        
+        if success and data.get('access_token'):
+            analyst_token = data['access_token']
+            original_token = self.session_token
+            self.session_token = analyst_token
+            
+            # Test Analyst can manage integrations
+            if self.test_workspace_id:
+                integration_config = {
+                    "platform": "meta_ads",
+                    "credentials": {"META_APP_ID": "analyst_test"}
+                }
+                
+                success, data, status = self.make_request(
+                    'POST', 
+                    f'workspaces/{self.test_workspace_id}/integrations', 
+                    integration_config
+                )
+                
+                self.log_result(
+                    "Analyst Can Manage Integrations", 
+                    success,
+                    f"Analyst successfully created integration",
+                    f"Analyst failed to create integration: {status}"
+                )
+            
+            # Restore original token
+            self.session_token = original_token
+            
+        else:
+            self.log_result(
+                "Analyst Login", 
+                False,
+                f"Status: {status}",
+                f"Failed to login as Analyst: {data.get('detail', 'Unknown error')}"
             )
 
     def test_auto_connection_testing(self):

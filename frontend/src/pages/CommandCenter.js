@@ -81,10 +81,26 @@ export default function CommandCenter() {
   return (
     <div className="space-y-8 animate-in" data-testid="command-center">
       {/* Header */}
-      <div>
-        <h1 className="font-heading text-4xl font-bold tracking-tight">
-          Command Center
-        </h1>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-heading text-4xl font-bold tracking-tight">
+            Command Center
+          </h1>
+        </div>
+        <button
+          onClick={() => setShowAddClient(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-zinc-200 transition-colors font-medium"
+        >
+          <Plus className="h-4 w-4" />
+          Add New Client
+        </button>
+      </div>
+
+      <AddClientModal
+        isOpen={showAddClient}
+        onClose={() => setShowAddClient(false)}
+        onSuccess={handleClientAdded}
+      />
         <p className="text-zinc-500 mt-2">
           Overview of all client workspaces and operations
         </p>

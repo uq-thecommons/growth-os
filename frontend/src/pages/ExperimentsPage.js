@@ -11,6 +11,8 @@ import {
   XCircle,
   RotateCw,
   ArrowUpRight,
+  LayoutGrid,
+  List,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
@@ -43,6 +45,14 @@ const STATUS_COLORS = {
   decided: "border-zinc-600 bg-zinc-800/50",
 };
 
+const STATUS_LABELS = {
+  backlog: "Backlog",
+  ready: "Ready",
+  live: "Live",
+  analyzing: "Analyzing",
+  decided: "Decided",
+};
+
 export default function ExperimentsPage() {
   const { workspaceId } = useParams();
   const [experiments, setExperiments] = useState([]);
@@ -51,6 +61,7 @@ export default function ExperimentsPage() {
   const [showDecisionDialog, setShowDecisionDialog] = useState(false);
   const [selectedExperiment, setSelectedExperiment] = useState(null);
   const [draggedExp, setDraggedExp] = useState(null);
+  const [viewMode, setViewMode] = useState("kanban"); // "kanban" or "list"
 
   const [newExperiment, setNewExperiment] = useState({
     name: "",

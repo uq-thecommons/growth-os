@@ -692,6 +692,15 @@ async def add_decision(
     user: Dict = Depends(check_role([UserRole.ADMIN, UserRole.GROWTH_LEAD]))
 ):
     """Add decision to experiment"""
+    # Get experiment first
+    exp = await db.experiments.find_one(
+        {"experiment_id": experiment_id, "workspace_id": workspace_id},
+        {"_id": 0}
+    )
+    
+    if not exp:
+        raise HTTPException(status_code=404, detail="Experiment not found")
+    
     decision_dict = {
         "decision_id": generate_id("dec"),
         "experiment_id": experiment_id,
@@ -715,8 +724,8 @@ async def add_decision(
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Experiment not found")
     
-    # Get workspace for audit
-    ws = await db.workspaces.find_one({"workspace_id": workspace_id}, {"_id": 0, "org_id": 1})
+    # Get workspace for audit and email
+    ws = await db.workspaces.find_one({"workspace_id": workspace_id}, {"_id": 0})
     
     await log_audit(
         org_id=ws["org_id"],
@@ -727,6 +736,22 @@ async def add_decision(
         resource_id=experiment_id,
         new_value=decision_dict
     )
+    
+    # Send email notification to experiment owner
+    if exp.get("owner_id"):
+        owner = await db.users.find_one({"user_id": exp["owner_id"]}, {"_id": 0})
+        if owner and owner.get("email"):
+            try:
+                await send_experiment_decision_notification(
+                    recipient_email=owner["email"],
+                    recipient_name=owner.get("name", "Team Member"),
+                    workspace_name=ws.get("name", "Workspace"),
+                    experiment_name=exp.get("name", "Experiment"),
+                    decision_type=decision.decision_type.value,
+                    rationale=decision.rationale
+                )
+            except Exception as e:
+                logger.error(f"Failed to send decision notification: {e}")
     
     return await get_experiment(workspace_id, experiment_id, user)
 

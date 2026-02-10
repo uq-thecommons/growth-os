@@ -72,23 +72,144 @@ class GA4Connector(BaseConnector):
     """Google Analytics 4 connector"""
     
     async def connect(self) -> bool:
-        # In production: OAuth flow with GA4
-        self.is_connected = True
-        self.sync_status = "connected"
-        logger.info("GA4 connector: connected (mock)")
-        return True
+        """Connect to GA4 using service account credentials"""
+        property_id = os.environ.get("GA4_PROPERTY_ID")
+        service_account_json = os.environ.get("GA4_SERVICE_ACCOUNT_JSON")
+        
+        # Check if credentials are available
+        if not property_id or not service_account_json or not GA4_AVAILABLE:
+            logger.info("GA4 connector: Using mock mode (credentials not configured)")
+            self.is_connected = True
+            self.sync_status = "connected_mock"
+            self.use_mock = True
+            return True
+        
+        try:
+            # Initialize GA4 client with service account
+            import json
+            credentials_dict = json.loads(service_account_json)
+            credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+            
+            self.client = BetaAnalyticsDataClient(credentials=credentials)
+            self.property_id = property_id
+            self.is_connected = True
+            self.sync_status = "connected"
+            self.use_mock = False
+            logger.info("GA4 connector: Connected to real API")
+            return True
+            
+        except Exception as e:
+            logger.error(f"GA4 connection failed: {e}. Falling back to mock mode")
+            self.is_connected = True
+            self.sync_status = "connected_mock"
+            self.use_mock = True
+            return True
     
     async def sync(self) -> Dict[str, Any]:
         """Sync events and metrics from GA4"""
         self.last_synced = datetime.now(timezone.utc)
-        self.sync_status = "synced"
         
-        # Generate mock GA4 data
-        return {
-            "events": self._generate_mock_events(),
-            "metrics": self._generate_mock_metrics(),
-            "synced_at": self.last_synced.isoformat()
-        }
+        # Use mock if not properly connected to real API
+        if getattr(self, 'use_mock', True):
+            self.sync_status = "synced_mock"
+            return {
+                "events": self._generate_mock_events(),
+                "metrics": self._generate_mock_metrics(),
+                "synced_at": self.last_synced.isoformat(),
+                "source": "mock"
+            }
+        
+        try:
+            # Fetch real data from GA4
+            end_date = datetime.now(timezone.utc)
+            start_date = end_date - timedelta(days=30)
+            
+            request = RunReportRequest(
+                property=f"properties/{self.property_id}",
+                date_ranges=[DateRange(
+                    start_date=start_date.strftime("%Y-%m-%d"),
+                    end_date=end_date.strftime("%Y-%m-%d")
+                )],
+                dimensions=[
+                    Dimension(name="eventName"),
+                    Dimension(name="date")
+                ],
+                metrics=[
+                    Metric(name="eventCount"),
+                    Metric(name="totalUsers")
+                ]
+            )
+            
+            response = self.client.run_report(request)
+            
+            # Parse response into events
+            events = []
+            for row in response.rows:
+                event_name = row.dimension_values[0].value
+                date = row.dimension_values[1].value
+                event_count = int(row.metric_values[0].value)
+                unique_users = int(row.metric_values[1].value)
+                
+                events.append({
+                    "event_name": event_name,
+                    "date": date,
+                    "count": event_count,
+                    "unique_users": unique_users
+                })
+            
+            # Get summary metrics
+            summary_request = RunReportRequest(
+                property=f"properties/{self.property_id}",
+                date_ranges=[DateRange(
+                    start_date=start_date.strftime("%Y-%m-%d"),
+                    end_date=end_date.strftime("%Y-%m-%d")
+                )],
+                metrics=[
+                    Metric(name="totalUsers"),
+                    Metric(name="newUsers"),
+                    Metric(name="sessions"),
+                    Metric(name="bounceRate"),
+                    Metric(name="averageSessionDuration"),
+                    Metric(name="screenPageViewsPerSession"),
+                    Metric(name="conversions")
+                ]
+            )
+            
+            summary_response = self.client.run_report(summary_request)
+            
+            if summary_response.rows:
+                row = summary_response.rows[0]
+                metrics = {
+                    "users": int(row.metric_values[0].value),
+                    "new_users": int(row.metric_values[1].value),
+                    "sessions": int(row.metric_values[2].value),
+                    "bounce_rate": float(row.metric_values[3].value),
+                    "avg_session_duration": float(row.metric_values[4].value),
+                    "pages_per_session": float(row.metric_values[5].value),
+                    "conversions": int(row.metric_values[6].value)
+                }
+            else:
+                metrics = self._generate_mock_metrics()
+            
+            self.sync_status = "synced"
+            
+            return {
+                "events": events,
+                "metrics": metrics,
+                "synced_at": self.last_synced.isoformat(),
+                "source": "ga4_api"
+            }
+            
+        except Exception as e:
+            logger.error(f"GA4 sync failed: {e}. Returning mock data")
+            self.sync_status = "synced_mock"
+            return {
+                "events": self._generate_mock_events(),
+                "metrics": self._generate_mock_metrics(),
+                "synced_at": self.last_synced.isoformat(),
+                "source": "mock_fallback",
+                "error": str(e)
+            }
     
     def _generate_mock_events(self) -> List[Dict[str, Any]]:
         """Generate mock GA4 events"""

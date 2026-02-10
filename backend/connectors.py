@@ -268,22 +268,142 @@ class MetaAdsConnector(BaseConnector):
     """Meta (Facebook/Instagram) Ads connector"""
     
     async def connect(self) -> bool:
-        # In production: OAuth flow with Meta Marketing API
-        self.is_connected = True
-        self.sync_status = "connected"
-        logger.info("Meta Ads connector: connected (mock)")
-        return True
+        """Connect to Meta Ads API using access token"""
+        app_id = os.environ.get("META_APP_ID")
+        app_secret = os.environ.get("META_APP_SECRET")
+        access_token = os.environ.get("META_ACCESS_TOKEN")
+        ad_account_id = os.environ.get("META_AD_ACCOUNT_ID")
+        
+        # Check if credentials are available
+        if not all([app_id, app_secret, access_token, ad_account_id]) or not META_AVAILABLE:
+            logger.info("Meta Ads connector: Using mock mode (credentials not configured)")
+            self.is_connected = True
+            self.sync_status = "connected_mock"
+            self.use_mock = True
+            return True
+        
+        try:
+            # Initialize Meta Ads API
+            FacebookAdsApi.init(app_id, app_secret, access_token)
+            self.ad_account = AdAccount(f"act_{ad_account_id}")
+            self.is_connected = True
+            self.sync_status = "connected"
+            self.use_mock = False
+            logger.info("Meta Ads connector: Connected to real API")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Meta Ads connection failed: {e}. Falling back to mock mode")
+            self.is_connected = True
+            self.sync_status = "connected_mock"
+            self.use_mock = True
+            return True
     
     async def sync(self) -> Dict[str, Any]:
         """Sync campaigns, adsets, and ads from Meta"""
         self.last_synced = datetime.now(timezone.utc)
-        self.sync_status = "synced"
         
-        return {
-            "campaigns": self._generate_mock_campaigns(),
-            "metrics": self._generate_mock_metrics(),
-            "synced_at": self.last_synced.isoformat()
-        }
+        # Use mock if not properly connected to real API
+        if getattr(self, 'use_mock', True):
+            self.sync_status = "synced_mock"
+            return {
+                "campaigns": self._generate_mock_campaigns(),
+                "metrics": self._generate_mock_metrics(),
+                "synced_at": self.last_synced.isoformat(),
+                "source": "mock"
+            }
+        
+        try:
+            # Fetch real campaigns from Meta Ads API
+            end_date = datetime.now(timezone.utc)
+            start_date = end_date - timedelta(days=30)
+            
+            date_preset = 'last_30d'
+            
+            fields = [
+                'name',
+                'status',
+                'objective',
+                'daily_budget',
+                'lifetime_budget'
+            ]
+            
+            params = {
+                'level': 'campaign',
+                'date_preset': date_preset,
+                'fields': fields
+            }
+            
+            campaigns_data = []
+            campaigns = self.ad_account.get_campaigns(fields=fields)
+            
+            for campaign in campaigns:
+                # Get insights for this campaign
+                insights = campaign.get_insights(fields=[
+                    'impressions',
+                    'clicks',
+                    'spend',
+                    'actions',  # Contains conversions
+                    'ctr',
+                    'cpc',
+                    'frequency'
+                ], params={'date_preset': date_preset})
+                
+                if insights:
+                    insight = insights[0]
+                    conversions = 0
+                    if 'actions' in insight:
+                        for action in insight['actions']:
+                            if action['action_type'] in ['purchase', 'complete_registration', 'lead']:
+                                conversions += int(action['value'])
+                    
+                    metrics = {
+                        'impressions': int(insight.get('impressions', 0)),
+                        'clicks': int(insight.get('clicks', 0)),
+                        'spend': float(insight.get('spend', 0)),
+                        'conversions': conversions,
+                        'ctr': float(insight.get('ctr', 0)),
+                        'cpc': float(insight.get('cpc', 0)),
+                        'frequency': float(insight.get('frequency', 0))
+                    }
+                    
+                    if metrics['clicks'] > 0:
+                        metrics['cpa'] = metrics['spend'] / conversions if conversions > 0 else 0
+                    else:
+                        metrics['cpa'] = 0
+                else:
+                    metrics = self._generate_ad_metrics()
+                
+                campaigns_data.append({
+                    'id': campaign.get('id'),
+                    'name': campaign.get('name'),
+                    'status': campaign.get('status'),
+                    'objective': campaign.get('objective'),
+                    'metrics': metrics
+                })
+            
+            # Calculate account-level summary
+            total_metrics = self._aggregate_metrics([c['metrics'] for c in campaigns_data])
+            
+            self.sync_status = "synced"
+            
+            return {
+                "campaigns": campaigns_data,
+                "metrics": total_metrics,
+                "synced_at": self.last_synced.isoformat(),
+                "source": "meta_ads_api"
+            }
+            
+        except Exception as e:
+            logger.error(f"Meta Ads sync failed: {e}. Returning mock data")
+            self.sync_status = "synced_mock"
+            return {
+                "campaigns": self._generate_mock_campaigns(),
+                "metrics": self._generate_mock_metrics(),
+                "synced_at": self.last_synced.isoformat(),
+                "source": "mock_fallback",
+                "error": str(e)
+            }
     
     def _generate_mock_campaigns(self) -> List[Dict[str, Any]]:
         """Generate mock Meta campaigns hierarchy"""

@@ -730,25 +730,25 @@ class GrowthOSAPITester:
             original_token = self.session_token
             self.session_token = analyst_token
             
-            # Test Analyst can manage integrations
-            if self.test_workspace_id:
-                integration_config = {
-                    "platform": "meta_ads",
-                    "credentials": {"META_APP_ID": "analyst_test"}
-                }
-                
-                success, data, status = self.make_request(
-                    'POST', 
-                    f'workspaces/{self.test_workspace_id}/integrations', 
-                    integration_config
-                )
-                
-                self.log_result(
-                    "Analyst Can Manage Integrations", 
-                    success,
-                    f"Analyst successfully created integration",
-                    f"Analyst failed to create integration: {status}"
-                )
+            # Test Analyst can manage integrations using existing workspace they have access to
+            test_workspace_id = "ws_acme_growth"  # Analyst has access to this workspace
+            integration_config = {
+                "platform": "meta_ads",
+                "credentials": {"META_APP_ID": "analyst_test"}
+            }
+            
+            success, data, status = self.make_request(
+                'POST', 
+                f'workspaces/{test_workspace_id}/integrations', 
+                integration_config
+            )
+            
+            self.log_result(
+                "Analyst Can Manage Integrations", 
+                success,
+                f"Analyst successfully created integration",
+                f"Analyst failed to create integration: {status}"
+            )
             
             # Restore original token
             self.session_token = original_token

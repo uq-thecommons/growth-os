@@ -716,18 +716,38 @@ class GoogleAdsConnector(BaseConnector):
 
 # Connector factory
 def get_connector(connector_type: str, credentials: Dict[str, Any] = None) -> BaseConnector:
-    """Get connector instance by type"""
-    connectors = {
+    """Get connector instance with optional workspace-specific credentials"""
+    connector_map = {
         "ga4": GA4Connector,
         "meta_ads": MetaAdsConnector,
-        "google_ads": GoogleAdsConnector
+        "google_ads": GoogleAdsConnector,
     }
     
-    connector_class = connectors.get(connector_type)
+    connector_class = connector_map.get(connector_type)
     if not connector_class:
         raise ValueError(f"Unknown connector type: {connector_type}")
     
-    return connector_class(credentials)
+    connector = connector_class()
+    
+    # If credentials provided, inject them temporarily for this connection
+    if credentials:
+        # Temporarily set environment variables for this connector
+        if connector_type == "ga4":
+            os.environ["GA4_PROPERTY_ID"] = credentials.get("GA4_PROPERTY_ID", "")
+            os.environ["GA4_SERVICE_ACCOUNT_JSON"] = credentials.get("GA4_SERVICE_ACCOUNT_JSON", "")
+        elif connector_type == "meta_ads":
+            os.environ["META_APP_ID"] = credentials.get("META_APP_ID", "")
+            os.environ["META_APP_SECRET"] = credentials.get("META_APP_SECRET", "")
+            os.environ["META_ACCESS_TOKEN"] = credentials.get("META_ACCESS_TOKEN", "")
+            os.environ["META_AD_ACCOUNT_ID"] = credentials.get("META_AD_ACCOUNT_ID", "")
+        elif connector_type == "google_ads":
+            os.environ["GOOGLE_ADS_DEVELOPER_TOKEN"] = credentials.get("GOOGLE_ADS_DEVELOPER_TOKEN", "")
+            os.environ["GOOGLE_ADS_CLIENT_ID"] = credentials.get("GOOGLE_ADS_CLIENT_ID", "")
+            os.environ["GOOGLE_ADS_CLIENT_SECRET"] = credentials.get("GOOGLE_ADS_CLIENT_SECRET", "")
+            os.environ["GOOGLE_ADS_REFRESH_TOKEN"] = credentials.get("GOOGLE_ADS_REFRESH_TOKEN", "")
+            os.environ["GOOGLE_ADS_CUSTOMER_ID"] = credentials.get("GOOGLE_ADS_CUSTOMER_ID", "")
+    
+    return connector
 
 
 async def sync_all_connectors(workspace_channels: List[Dict]) -> Dict[str, Any]:

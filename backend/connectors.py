@@ -1,13 +1,48 @@
 """
 thecommons. Growth OS - Connectors Service
-Scaffolding for GA4, Meta Ads, Google Ads integrations with mock data
+Real API integrations for GA4, Meta Ads, Google Ads with mock fallback
 """
 from typing import Dict, Any, List, Optional
 from datetime import datetime, timezone, timedelta
 import random
 import logging
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 logger = logging.getLogger(__name__)
+
+# Try to import real API clients
+try:
+    from google.analytics.data_v1beta import BetaAnalyticsDataClient
+    from google.analytics.data_v1beta.types import (
+        DateRange, Dimension, Metric, RunReportRequest
+    )
+    from google.oauth2 import service_account
+    GA4_AVAILABLE = True
+except ImportError:
+    GA4_AVAILABLE = False
+    logger.warning("Google Analytics Data API not available")
+
+try:
+    import facebook_business
+    from facebook_business.adobjects.adaccount import AdAccount
+    from facebook_business.adobjects.campaign import Campaign
+    from facebook_business.adobjects.adset import AdSet
+    from facebook_business.adobjects.ad import Ad
+    from facebook_business.api import FacebookAdsApi
+    META_AVAILABLE = True
+except ImportError:
+    META_AVAILABLE = False
+    logger.warning("Facebook Business SDK not available")
+
+try:
+    from google.ads.googleads.client import GoogleAdsClient
+    from google.ads.googleads.errors import GoogleAdsException
+    GOOGLE_ADS_AVAILABLE = True
+except ImportError:
+    GOOGLE_ADS_AVAILABLE = False
+    logger.warning("Google Ads API not available")
 
 
 class BaseConnector:

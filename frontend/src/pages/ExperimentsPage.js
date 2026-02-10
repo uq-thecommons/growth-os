@@ -235,7 +235,7 @@ export default function ExperimentsPage() {
                 <span className="sm:hidden">New</span>
               </Button>
             </DialogTrigger>
-          <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
+            <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
             <DialogHeader>
               <DialogTitle className="font-heading">Create Experiment</DialogTitle>
             </DialogHeader>

@@ -23,7 +23,7 @@ load_dotenv(ROOT_DIR / '.env')
 # Import models
 from models import (
     Organization, OrganizationCreate,
-    ClientWorkspace, WorkspaceCreate,
+    ClientWorkspace, WorkspaceCreate, WorkspaceUpdate,
     User, UserCreate, UserResponse, UserSession,
     RoleAssignment, RoleAssignmentCreate,
     Goal, GoalCreate, NorthStarMetric, NorthStarMetricCreate,
@@ -33,6 +33,8 @@ from models import (
     Decision, DecisionCreate, Insight, InsightCreate,
     Asset, AssetCreate, AssetUpdate, CreativeBrief, CreativeBriefCreate,
     Channel, ChannelCreate, PerformanceMetric, SpendRecord,
+    IntegrationConfig, IntegrationConfigCreate, IntegrationConfigUpdate,
+    IntegrationConfigResponse, ConnectionStatus,
     Creator, CreatorCreate, CreatorUpdate, CreatorDeal, CreatorDealCreate,
     WeeklyReport, WeeklyReportCreate, WeeklyReportUpdate,
     AuditLog, Alert,

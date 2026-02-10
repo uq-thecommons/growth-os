@@ -370,6 +370,7 @@ test_plan:
     - "Integration Configuration APIs - All operations"
     - "RBAC Testing - Permission verification"
     - "Auto-Testing - Connection status automation"
+    - "Frontend UI Testing - All client management features"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"

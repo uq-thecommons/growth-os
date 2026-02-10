@@ -652,7 +652,7 @@ class GrowthOSAPITester:
         # Test with Growth Lead credentials
         growth_lead_data = {
             "email": "growthld@thecommons.io",
-            "password": "password"
+            "password": "growth123"
         }
         
         success, data, status = self.make_request('POST', 'auth/login', growth_lead_data)

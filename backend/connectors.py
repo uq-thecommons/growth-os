@@ -501,22 +501,170 @@ class GoogleAdsConnector(BaseConnector):
     """Google Ads connector"""
     
     async def connect(self) -> bool:
-        # In production: OAuth flow with Google Ads API
-        self.is_connected = True
-        self.sync_status = "connected"
-        logger.info("Google Ads connector: connected (mock)")
-        return True
+        """Connect to Google Ads API using OAuth credentials"""
+        developer_token = os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN")
+        client_id = os.environ.get("GOOGLE_ADS_CLIENT_ID")
+        client_secret = os.environ.get("GOOGLE_ADS_CLIENT_SECRET")
+        refresh_token = os.environ.get("GOOGLE_ADS_REFRESH_TOKEN")
+        customer_id = os.environ.get("GOOGLE_ADS_CUSTOMER_ID")
+        
+        # Check if credentials are available
+        if not all([developer_token, client_id, client_secret, refresh_token, customer_id]) or not GOOGLE_ADS_AVAILABLE:
+            logger.info("Google Ads connector: Using mock mode (credentials not configured)")
+            self.is_connected = True
+            self.sync_status = "connected_mock"
+            self.use_mock = True
+            return True
+        
+        try:
+            # Initialize Google Ads client
+            credentials = {
+                "developer_token": developer_token,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "refresh_token": refresh_token,
+                "use_proto_plus": True
+            }
+            
+            self.client = GoogleAdsClient.load_from_dict(credentials)
+            self.customer_id = customer_id.replace("-", "")
+            self.is_connected = True
+            self.sync_status = "connected"
+            self.use_mock = False
+            logger.info("Google Ads connector: Connected to real API")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Google Ads connection failed: {e}. Falling back to mock mode")
+            self.is_connected = True
+            self.sync_status = "connected_mock"
+            self.use_mock = True
+            return True
     
     async def sync(self) -> Dict[str, Any]:
         """Sync campaigns from Google Ads"""
         self.last_synced = datetime.now(timezone.utc)
-        self.sync_status = "synced"
         
-        return {
-            "campaigns": self._generate_mock_campaigns(),
-            "metrics": self._generate_mock_metrics(),
-            "synced_at": self.last_synced.isoformat()
-        }
+        # Use mock if not properly connected to real API
+        if getattr(self, 'use_mock', True):
+            self.sync_status = "synced_mock"
+            return {
+                "campaigns": self._generate_mock_campaigns(),
+                "metrics": self._generate_mock_metrics(),
+                "synced_at": self.last_synced.isoformat(),
+                "source": "mock"
+            }
+        
+        try:
+            # Fetch real campaigns from Google Ads API
+            end_date = datetime.now(timezone.utc)
+            start_date = end_date - timedelta(days=30)
+            
+            ga_service = self.client.get_service("GoogleAdsService")
+            
+            query = f"""
+                SELECT
+                    campaign.id,
+                    campaign.name,
+                    campaign.advertising_channel_type,
+                    campaign.status,
+                    campaign_budget.amount_micros,
+                    metrics.impressions,
+                    metrics.clicks,
+                    metrics.cost_micros,
+                    metrics.conversions,
+                    metrics.conversions_value
+                FROM campaign
+                WHERE campaign.status = 'ENABLED'
+                AND segments.date BETWEEN '{start_date.strftime("%Y-%m-%d")}' 
+                    AND '{end_date.strftime("%Y-%m-%d")}'
+                ORDER BY metrics.impressions DESC
+            """
+            
+            request = self.client.get_type("SearchGoogleAdsRequest")
+            request.customer_id = self.customer_id
+            request.query = query
+            
+            response = ga_service.search(request=request)
+            
+            campaigns_data = []
+            for row in response:
+                campaign = row.campaign
+                metrics = row.metrics
+                budget = row.campaign_budget
+                
+                impressions = metrics.impressions
+                clicks = metrics.clicks
+                spend = metrics.cost_micros / 1_000_000  # Convert from micros
+                conversions = int(metrics.conversions)
+                
+                campaign_metrics = {
+                    "impressions": impressions,
+                    "clicks": clicks,
+                    "spend": round(spend, 2),
+                    "conversions": conversions,
+                    "ctr": round(clicks / impressions, 4) if impressions > 0 else 0,
+                    "cpc": round(spend / clicks, 2) if clicks > 0 else 0,
+                    "cpa": round(spend / conversions, 2) if conversions > 0 else 0,
+                    "conv_rate": round(conversions / clicks, 4) if clicks > 0 else 0
+                }
+                
+                campaigns_data.append({
+                    "id": str(campaign.id),
+                    "name": campaign.name,
+                    "type": campaign.advertising_channel_type.name,
+                    "status": campaign.status.name,
+                    "daily_budget": budget.amount_micros / 1_000_000 if budget else 0,
+                    "metrics": campaign_metrics
+                })
+            
+            # Calculate account-level summary
+            total_impressions = sum(c['metrics']['impressions'] for c in campaigns_data)
+            total_clicks = sum(c['metrics']['clicks'] for c in campaigns_data)
+            total_spend = sum(c['metrics']['spend'] for c in campaigns_data)
+            total_conversions = sum(c['metrics']['conversions'] for c in campaigns_data)
+            
+            summary_metrics = {
+                "total_spend": round(total_spend, 2),
+                "total_impressions": total_impressions,
+                "total_clicks": total_clicks,
+                "total_conversions": total_conversions,
+                "avg_ctr": round(total_clicks / total_impressions, 4) if total_impressions > 0 else 0,
+                "avg_cpc": round(total_spend / total_clicks, 2) if total_clicks > 0 else 0
+            }
+            
+            self.sync_status = "synced"
+            
+            return {
+                "campaigns": campaigns_data,
+                "metrics": summary_metrics,
+                "synced_at": self.last_synced.isoformat(),
+                "source": "google_ads_api"
+            }
+            
+        except GoogleAdsException as ex:
+            logger.error(f"Google Ads API error: Request ID {ex.request_id}, Status: {ex.error.code().name}")
+            for error in ex.failure.errors:
+                logger.error(f"  Error: {error.message}")
+            
+            self.sync_status = "synced_mock"
+            return {
+                "campaigns": self._generate_mock_campaigns(),
+                "metrics": self._generate_mock_metrics(),
+                "synced_at": self.last_synced.isoformat(),
+                "source": "mock_fallback",
+                "error": str(ex)
+            }
+        except Exception as e:
+            logger.error(f"Google Ads sync failed: {e}. Returning mock data")
+            self.sync_status = "synced_mock"
+            return {
+                "campaigns": self._generate_mock_campaigns(),
+                "metrics": self._generate_mock_metrics(),
+                "synced_at": self.last_synced.isoformat(),
+                "source": "mock_fallback",
+                "error": str(e)
+            }
     
     def _generate_mock_campaigns(self) -> List[Dict[str, Any]]:
         """Generate mock Google Ads campaigns"""

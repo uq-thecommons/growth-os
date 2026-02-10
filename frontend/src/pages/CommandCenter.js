@@ -324,5 +324,6 @@ export default function CommandCenter() {
         </Card>
       </div>
     </div>
+    </>
   );
 }

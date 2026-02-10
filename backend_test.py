@@ -423,8 +423,10 @@ class GrowthOSAPITester:
             return
 
         # Test creating a new client workspace
+        import time
+        timestamp = int(time.time())
         workspace_data = {
-            "name": "Acme Corporation",
+            "name": f"Acme Corporation {timestamp}",
             "industry": "Technology",
             "website_url": "https://acme.com",
             "contact_name": "John Smith",

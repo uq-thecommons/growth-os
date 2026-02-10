@@ -12,14 +12,17 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
+  Plus,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Button } from "../components/ui/button";
+import AddClientModal from "../components/AddClientModal";
 
 export default function CommandCenter() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAddClient, setShowAddClient] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,6 +49,10 @@ export default function CommandCenter() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClientAdded = () => {
+    fetchData(); // Refresh data
   };
 
   if (loading) {

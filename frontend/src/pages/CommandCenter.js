@@ -79,34 +79,34 @@ export default function CommandCenter() {
   };
 
   return (
-    <div className="space-y-8 animate-in" data-testid="command-center">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-heading text-4xl font-bold tracking-tight">
-            Command Center
-          </h1>
-        </div>
-        <button
-          onClick={() => setShowAddClient(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-zinc-200 transition-colors font-medium"
-        >
-          <Plus className="h-4 w-4" />
-          Add New Client
-        </button>
-      </div>
-
+    <>
       <AddClientModal
         isOpen={showAddClient}
         onClose={() => setShowAddClient(false)}
         onSuccess={handleClientAdded}
       />
-        <p className="text-zinc-500 mt-2">
-          Overview of all client workspaces and operations
-        </p>
-      </div>
+      
+      <div className="space-y-8 animate-in" data-testid="command-center">
+        {/* Header */}
+        <div>
+          <div className="flex items-center justify-between">
+            <h1 className="font-heading text-4xl font-bold tracking-tight">
+              Command Center
+            </h1>
+            <button
+              onClick={() => setShowAddClient(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg hover:bg-zinc-200 transition-colors font-medium"
+            >
+              <Plus className="h-4 w-4" />
+              Add New Client
+            </button>
+          </div>
+          <p className="text-zinc-500 mt-2">
+            Overview of all client workspaces and operations
+          </p>
+        </div>
 
-      {/* Stats Grid */}
+        {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="bg-black border-zinc-800" data-testid="stat-at-risk">
           <CardContent className="pt-6">

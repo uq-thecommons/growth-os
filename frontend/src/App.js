@@ -154,6 +154,7 @@ function AppRouter() {
                 <Route path="/workspace/:workspaceId/creators" element={<CreatorsPage />} />
                 <Route path="/workspace/:workspaceId/measurement" element={<MeasurementPage />} />
                 <Route path="/workspace/:workspaceId/funnel" element={<FunnelBuilder />} />
+                <Route path="/workspace/:workspaceId/settings" element={<WorkspaceSettings />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/client/:workspaceId" element={<ClientPortal />} />
                 <Route path="/admin" element={<AdminPage />} />

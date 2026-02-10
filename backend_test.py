@@ -416,6 +416,346 @@ class GrowthOSAPITester:
             f"Failed to get anomalies: {status}"
         )
 
+    def test_client_management_apis(self):
+        """Test client management APIs - workspace creation and updates"""
+        if not self.session_token:
+            self.log_result("Client Management APIs", False, "", "No authentication token")
+            return
+
+        # Test creating a new client workspace
+        workspace_data = {
+            "name": "Acme Corporation",
+            "industry": "Technology",
+            "website_url": "https://acme.com",
+            "contact_name": "John Smith",
+            "contact_email": "john@acme.com",
+            "contact_phone": "+1-555-0123",
+            "initial_goals": "Increase user acquisition by 50% and improve conversion rates",
+            "growth_lead_id": None  # Will be set if we have a growth lead user
+        }
+        
+        success, data, status = self.make_request(
+            'POST', 
+            'workspaces?org_id=org_thecommons001', 
+            workspace_data, 
+            200
+        )
+        
+        if success and data.get('workspace_id'):
+            self.test_workspace_id = data['workspace_id']
+            self.log_result(
+                "Create Client Workspace", 
+                True,
+                f"Created workspace: {data.get('name')} (ID: {self.test_workspace_id})",
+                ""
+            )
+            
+            # Test updating client details
+            update_data = {
+                "description": "Updated description for Acme Corp",
+                "contact_phone": "+1-555-9999",
+                "current_constraint": "Limited budget for Q1",
+                "this_week_focus": ["Landing page optimization", "Email campaign launch"]
+            }
+            
+            success, data, status = self.make_request(
+                'PUT', 
+                f'workspaces/{self.test_workspace_id}', 
+                update_data
+            )
+            
+            self.log_result(
+                "Update Client Details", 
+                success and data.get('description') == update_data['description'],
+                f"Updated workspace details successfully",
+                f"Failed to update workspace: {status}"
+            )
+            
+            # Test getting updated workspace details
+            success, data, status = self.make_request('GET', f'workspaces/{self.test_workspace_id}')
+            expected_fields = ['name', 'industry', 'website_url', 'contact_name', 'contact_email']
+            has_fields = all(field in data for field in expected_fields) if isinstance(data, dict) else False
+            
+            self.log_result(
+                "Get Updated Workspace Details", 
+                success and has_fields,
+                f"Retrieved workspace with all client fields",
+                f"Missing client fields or API failed: {status}"
+            )
+            
+        else:
+            self.log_result(
+                "Create Client Workspace", 
+                False,
+                f"Status: {status}, Response: {data}",
+                f"Failed to create workspace: {data.get('detail', 'Unknown error')}"
+            )
+
+    def test_integration_config_apis(self):
+        """Test integration configuration APIs"""
+        if not self.test_workspace_id:
+            self.log_result("Integration Config APIs", False, "", "No workspace ID available")
+            return
+
+        # Test listing integrations (should be empty initially)
+        success, data, status = self.make_request('GET', f'workspaces/{self.test_workspace_id}/integrations')
+        self.log_result(
+            "List Integration Configs", 
+            success and isinstance(data, list),
+            f"Found {len(data) if isinstance(data, list) else 0} integration configs",
+            f"Failed to list integrations: {status}"
+        )
+
+        # Test creating GA4 integration config
+        ga4_config = {
+            "platform": "ga4",
+            "credentials": {
+                "GA4_PROPERTY_ID": "123456789",
+                "GA4_SERVICE_ACCOUNT_JSON": '{"type": "service_account", "project_id": "test-project"}'
+            }
+        }
+        
+        success, data, status = self.make_request(
+            'POST', 
+            f'workspaces/{self.test_workspace_id}/integrations', 
+            ga4_config
+        )
+        
+        ga4_config_id = None
+        if success and data.get('config_id'):
+            ga4_config_id = data['config_id']
+            self.log_result(
+                "Create GA4 Integration", 
+                True,
+                f"Created GA4 config (ID: {ga4_config_id}, Status: {data.get('status')})",
+                ""
+            )
+        else:
+            self.log_result(
+                "Create GA4 Integration", 
+                False,
+                f"Status: {status}",
+                f"Failed to create GA4 integration: {data.get('detail', 'Unknown error')}"
+            )
+
+        # Test creating Meta Ads integration config
+        meta_config = {
+            "platform": "meta_ads",
+            "credentials": {
+                "META_APP_ID": "123456789",
+                "META_APP_SECRET": "test_secret",
+                "META_ACCESS_TOKEN": "test_token",
+                "META_AD_ACCOUNT_ID": "act_123456789"
+            }
+        }
+        
+        success, data, status = self.make_request(
+            'POST', 
+            f'workspaces/{self.test_workspace_id}/integrations', 
+            meta_config
+        )
+        
+        meta_config_id = None
+        if success and data.get('config_id'):
+            meta_config_id = data['config_id']
+            self.log_result(
+                "Create Meta Ads Integration", 
+                True,
+                f"Created Meta Ads config (ID: {meta_config_id}, Status: {data.get('status')})",
+                ""
+            )
+        else:
+            self.log_result(
+                "Create Meta Ads Integration", 
+                False,
+                f"Status: {status}",
+                f"Failed to create Meta Ads integration: {data.get('detail', 'Unknown error')}"
+            )
+
+        # Test creating Google Ads integration config
+        google_ads_config = {
+            "platform": "google_ads",
+            "credentials": {
+                "GOOGLE_ADS_DEVELOPER_TOKEN": "test_dev_token",
+                "GOOGLE_ADS_CLIENT_ID": "test_client_id",
+                "GOOGLE_ADS_CLIENT_SECRET": "test_client_secret",
+                "GOOGLE_ADS_REFRESH_TOKEN": "test_refresh_token",
+                "GOOGLE_ADS_CUSTOMER_ID": "123-456-7890"
+            }
+        }
+        
+        success, data, status = self.make_request(
+            'POST', 
+            f'workspaces/{self.test_workspace_id}/integrations', 
+            google_ads_config
+        )
+        
+        google_ads_config_id = None
+        if success and data.get('config_id'):
+            google_ads_config_id = data['config_id']
+            self.log_result(
+                "Create Google Ads Integration", 
+                True,
+                f"Created Google Ads config (ID: {google_ads_config_id}, Status: {data.get('status')})",
+                ""
+            )
+        else:
+            self.log_result(
+                "Create Google Ads Integration", 
+                False,
+                f"Status: {status}",
+                f"Failed to create Google Ads integration: {data.get('detail', 'Unknown error')}"
+            )
+
+        # Test connection testing for each integration
+        for config_id, platform in [(ga4_config_id, "GA4"), (meta_config_id, "Meta Ads"), (google_ads_config_id, "Google Ads")]:
+            if config_id:
+                success, data, status = self.make_request(
+                    'POST', 
+                    f'workspaces/{self.test_workspace_id}/integrations/{config_id}/test'
+                )
+                
+                self.log_result(
+                    f"Test {platform} Connection", 
+                    success and 'status' in data,
+                    f"Connection test result: {data.get('status', 'unknown')}",
+                    f"Failed to test {platform} connection: {status}"
+                )
+
+        # Test listing integrations again (should now have configs)
+        success, data, status = self.make_request('GET', f'workspaces/{self.test_workspace_id}/integrations')
+        expected_count = sum(1 for config_id in [ga4_config_id, meta_config_id, google_ads_config_id] if config_id)
+        
+        self.log_result(
+            "List Integration Configs (After Creation)", 
+            success and isinstance(data, list) and len(data) == expected_count,
+            f"Found {len(data) if isinstance(data, list) else 0} integration configs (expected {expected_count})",
+            f"Incorrect number of integrations or API failed: {status}"
+        )
+
+        # Test deleting an integration
+        if ga4_config_id:
+            success, data, status = self.make_request(
+                'DELETE', 
+                f'workspaces/{self.test_workspace_id}/integrations/{ga4_config_id}'
+            )
+            
+            self.log_result(
+                "Delete Integration Config", 
+                success,
+                f"Successfully deleted GA4 integration",
+                f"Failed to delete integration: {status}"
+            )
+
+    def test_rbac_permissions(self):
+        """Test RBAC permissions for client management and integrations"""
+        # Test with Growth Lead credentials
+        growth_lead_data = {
+            "email": "lead@thecommons.io",
+            "password": "password"
+        }
+        
+        success, data, status = self.make_request('POST', 'auth/login', growth_lead_data)
+        
+        if success and data.get('access_token'):
+            growth_lead_token = data['access_token']
+            original_token = self.session_token
+            self.session_token = growth_lead_token
+            
+            # Test Growth Lead can create clients
+            workspace_data = {
+                "name": "Growth Lead Test Client",
+                "industry": "E-commerce",
+                "website_url": "https://testclient.com"
+            }
+            
+            success, data, status = self.make_request(
+                'POST', 
+                'workspaces?org_id=org_thecommons001', 
+                workspace_data
+            )
+            
+            self.log_result(
+                "Growth Lead Can Create Clients", 
+                success,
+                f"Growth Lead successfully created workspace",
+                f"Growth Lead failed to create workspace: {status}"
+            )
+            
+            # Test Growth Lead can manage integrations
+            if success and data.get('workspace_id'):
+                test_ws_id = data['workspace_id']
+                integration_config = {
+                    "platform": "ga4",
+                    "credentials": {"GA4_PROPERTY_ID": "test123"}
+                }
+                
+                success, data, status = self.make_request(
+                    'POST', 
+                    f'workspaces/{test_ws_id}/integrations', 
+                    integration_config
+                )
+                
+                self.log_result(
+                    "Growth Lead Can Manage Integrations", 
+                    success,
+                    f"Growth Lead successfully created integration",
+                    f"Growth Lead failed to create integration: {status}"
+                )
+            
+            # Restore original token
+            self.session_token = original_token
+            
+        else:
+            self.log_result(
+                "Growth Lead Login", 
+                False,
+                f"Status: {status}",
+                f"Failed to login as Growth Lead: {data.get('detail', 'Unknown error')}"
+            )
+
+    def test_auto_connection_testing(self):
+        """Test automatic connection testing when credentials are provided"""
+        if not self.test_workspace_id:
+            self.log_result("Auto Connection Testing", False, "", "No workspace ID available")
+            return
+
+        # Create integration with mock credentials and verify auto-testing
+        config_data = {
+            "platform": "meta_ads",
+            "credentials": {
+                "META_APP_ID": "auto_test_app",
+                "META_APP_SECRET": "auto_test_secret",
+                "META_ACCESS_TOKEN": "auto_test_token",
+                "META_AD_ACCOUNT_ID": "act_auto_test"
+            }
+        }
+        
+        success, data, status = self.make_request(
+            'POST', 
+            f'workspaces/{self.test_workspace_id}/integrations', 
+            config_data
+        )
+        
+        if success and data.get('config_id'):
+            # Check that status was automatically set (not "not_configured")
+            auto_tested = data.get('status') in ['testing', 'connected', 'failed']
+            has_test_timestamp = data.get('last_tested') is not None
+            
+            self.log_result(
+                "Auto Connection Testing", 
+                auto_tested and has_test_timestamp,
+                f"Integration auto-tested with status: {data.get('status')}, last_tested: {data.get('last_tested')}",
+                f"Auto-testing failed - status: {data.get('status')}, no test timestamp"
+            )
+        else:
+            self.log_result(
+                "Auto Connection Testing", 
+                False,
+                f"Status: {status}",
+                f"Failed to create integration for auto-testing: {data.get('detail', 'Unknown error')}"
+            )
+
     def test_admin_endpoints(self):
         """Test admin endpoints"""
         # List users

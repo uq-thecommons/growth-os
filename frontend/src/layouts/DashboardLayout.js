@@ -90,6 +90,7 @@ export default function DashboardLayout({ children }) {
         { name: "Creators", href: `/workspace/${currentWorkspace.workspace_id}/creators`, icon: Users },
         { name: "Measurement", href: `/workspace/${currentWorkspace.workspace_id}/measurement`, icon: BarChart3 },
         { name: "Funnel Builder", href: `/workspace/${currentWorkspace.workspace_id}/funnel`, icon: GitBranch },
+        { name: "Client Settings", href: `/workspace/${currentWorkspace.workspace_id}/settings`, icon: Settings },
       ]
     : [];
 

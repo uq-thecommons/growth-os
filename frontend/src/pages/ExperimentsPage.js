@@ -185,9 +185,9 @@ export default function ExperimentsPage() {
   return (
     <div className="space-y-6 animate-in" data-testid="experiments-page">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold tracking-tight">
+          <h1 className="font-heading text-3xl sm:text-4xl font-bold tracking-tight">
             Experiments
           </h1>
           <p className="text-zinc-500 mt-1">
@@ -195,16 +195,46 @@ export default function ExperimentsPage() {
           </p>
         </div>
 
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button
-              className="bg-white text-black hover:bg-zinc-200 rounded-full"
-              data-testid="create-experiment-btn"
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
+          <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode("kanban")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                viewMode === "kanban"
+                  ? "bg-white text-black"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+              title="Kanban View"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              New Experiment
-            </Button>
-          </DialogTrigger>
+              <LayoutGrid className="h-4 w-4" />
+              <span className="hidden sm:inline">Kanban</span>
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors ${
+                viewMode === "list"
+                  ? "bg-white text-black"
+                  : "text-zinc-400 hover:text-white"
+              }`}
+              title="List View"
+            >
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">List</span>
+            </button>
+          </div>
+
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-white text-black hover:bg-zinc-200 rounded-lg"
+                data-testid="create-experiment-btn"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                <span className="hidden sm:inline">New Experiment</span>
+                <span className="sm:hidden">New</span>
+              </Button>
+            </DialogTrigger>
           <DialogContent className="bg-zinc-900 border-zinc-800 max-w-lg">
             <DialogHeader>
               <DialogTitle className="font-heading">Create Experiment</DialogTitle>

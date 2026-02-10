@@ -651,7 +651,7 @@ class GrowthOSAPITester:
         """Test RBAC permissions for client management and integrations"""
         # Test with Growth Lead credentials
         growth_lead_data = {
-            "email": "lead@thecommons.io",
+            "email": "growthld@thecommons.io",
             "password": "password"
         }
         

@@ -47,6 +47,10 @@ from ai_service import (
     generate_creative_iterations, detect_anomalies
 )
 from connectors import get_connector, sync_all_connectors
+from email_service import (
+    send_report_ready_notification, send_report_approved_notification,
+    send_experiment_decision_notification
+)
 
 # Configure logging
 logging.basicConfig(

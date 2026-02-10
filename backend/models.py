@@ -108,8 +108,18 @@ class ClientWorkspace(BaseDBModel):
     slug: str
     description: Optional[str] = None
     logo_url: Optional[str] = None
+    # Client details
+    industry: Optional[str] = None
+    website_url: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    # Goals and focus
+    initial_goals: Optional[str] = None
     current_constraint: Optional[str] = None
     this_week_focus: List[str] = Field(default_factory=list)
+    # Assignment
+    growth_lead_id: Optional[str] = None
     settings: Dict[str, Any] = Field(default_factory=dict)
     is_active: bool = True
     created_at: datetime = Field(default_factory=now_utc)
@@ -117,9 +127,31 @@ class ClientWorkspace(BaseDBModel):
 
 class WorkspaceCreate(BaseModel):
     name: str
-    slug: str
+    slug: Optional[str] = None  # Auto-generate if not provided
     description: Optional[str] = None
     logo_url: Optional[str] = None
+    industry: Optional[str] = None
+    website_url: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    initial_goals: Optional[str] = None
+    growth_lead_id: Optional[str] = None
+
+class WorkspaceUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    logo_url: Optional[str] = None
+    industry: Optional[str] = None
+    website_url: Optional[str] = None
+    contact_name: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    initial_goals: Optional[str] = None
+    current_constraint: Optional[str] = None
+    this_week_focus: Optional[List[str]] = None
+    growth_lead_id: Optional[str] = None
+    is_active: Optional[bool] = None
 
 class User(BaseDBModel):
     user_id: str = Field(default_factory=lambda: generate_id("user"))

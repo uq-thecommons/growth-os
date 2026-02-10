@@ -665,8 +665,10 @@ class GrowthOSAPITester:
             self.session_token = growth_lead_token
             
             # Test Growth Lead can create clients
+            import time
+            timestamp = int(time.time())
             workspace_data = {
-                "name": "Growth Lead Test Client",
+                "name": f"Growth Lead Test Client {timestamp}",
                 "industry": "E-commerce",
                 "website_url": "https://testclient.com"
             }

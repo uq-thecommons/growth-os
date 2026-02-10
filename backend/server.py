@@ -1084,6 +1084,257 @@ async def update_asset(
     return await db.assets.find_one({"asset_id": asset_id}, {"_id": 0})
 
 
+
+# ====================
+# INTEGRATION CONFIG ROUTES
+# ====================
+
+@api_router.get("/workspaces/{workspace_id}/integrations")
+async def list_integrations(
+    workspace_id: str,
+    user: Dict = Depends(get_current_user)
+):
+    """List all integration configurations for a workspace"""
+    configs = await db.integration_configs.find(
+        {"workspace_id": workspace_id},
+        {"_id": 0}
+    ).to_list(10)
+    
+    # Return without exposing credentials
+    return [
+        IntegrationConfigResponse(
+            config_id=c["config_id"],
+            workspace_id=c["workspace_id"],
+            platform=c["platform"],
+            status=c.get("status", ConnectionStatus.NOT_CONFIGURED),
+            last_tested=c.get("last_tested"),
+            last_synced=c.get("last_synced"),
+            error_message=c.get("error_message"),
+            has_credentials=bool(c.get("credentials")),
+            connected_by=c.get("connected_by"),
+            created_at=c.get("created_at", now_utc().isoformat()),
+            updated_at=c.get("updated_at", now_utc().isoformat())
+        )
+        for c in configs
+    ]
+
+
+@api_router.post("/workspaces/{workspace_id}/integrations")
+async def create_integration(
+    workspace_id: str,
+    config: IntegrationConfigCreate,
+    user: Dict = Depends(check_role([UserRole.ADMIN, UserRole.GROWTH_LEAD, UserRole.ANALYST_OPS]))
+):
+    """Create or update integration configuration"""
+    # Get workspace to verify it exists and get org_id
+    workspace = await db.workspaces.find_one(
+        {"workspace_id": workspace_id},
+        {"_id": 0}
+    )
+    if not workspace:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    
+    # Check if config already exists
+    existing = await db.integration_configs.find_one(
+        {"workspace_id": workspace_id, "platform": config.platform.value},
+        {"_id": 0}
+    )
+    
+    if existing:
+        # Update existing
+        await db.integration_configs.update_one(
+            {"config_id": existing["config_id"]},
+            {"$set": {
+                "credentials": config.credentials,
+                "status": ConnectionStatus.TESTING,
+                "updated_at": now_utc().isoformat(),
+                "connected_by": user["user_id"]
+            }}
+        )
+        config_id = existing["config_id"]
+    else:
+        # Create new
+        config_id = generate_id("intcfg")
+        config_dict = {
+            "config_id": config_id,
+            "workspace_id": workspace_id,
+            "org_id": workspace["org_id"],
+            "platform": config.platform.value,
+            "credentials": config.credentials,
+            "status": ConnectionStatus.TESTING.value,
+            "connected_by": user["user_id"],
+            "created_at": now_utc().isoformat(),
+            "updated_at": now_utc().isoformat()
+        }
+        await db.integration_configs.insert_one(config_dict)
+    
+    # Test the connection
+    try:
+        connector = get_connector(config.platform.value, config.credentials)
+        connection_success = await connector.connect()
+        
+        if connection_success and not getattr(connector, 'use_mock', False):
+            # Successfully connected to real API
+            await db.integration_configs.update_one(
+                {"config_id": config_id},
+                {"$set": {
+                    "status": ConnectionStatus.CONNECTED.value,
+                    "last_tested": now_utc().isoformat(),
+                    "error_message": None
+                }}
+            )
+            status = ConnectionStatus.CONNECTED
+            error_message = None
+        else:
+            # Connection failed or fell back to mock
+            await db.integration_configs.update_one(
+                {"config_id": config_id},
+                {"$set": {
+                    "status": ConnectionStatus.FAILED.value,
+                    "last_tested": now_utc().isoformat(),
+                    "error_message": "Invalid credentials or API not available"
+                }}
+            )
+            status = ConnectionStatus.FAILED
+            error_message = "Invalid credentials or API not available"
+    except Exception as e:
+        logger.error(f"Integration test failed: {e}")
+        await db.integration_configs.update_one(
+            {"config_id": config_id},
+            {"$set": {
+                "status": ConnectionStatus.FAILED.value,
+                "last_tested": now_utc().isoformat(),
+                "error_message": str(e)
+            }}
+        )
+        status = ConnectionStatus.FAILED
+        error_message = str(e)
+    
+    # Log audit
+    await log_audit(
+        org_id=workspace["org_id"],
+        workspace_id=workspace_id,
+        user_id=user["user_id"],
+        action="integration_configured",
+        resource_type="integration_config",
+        resource_id=config_id,
+        new_value={"platform": config.platform.value, "status": status.value}
+    )
+    
+    # Return config
+    final_config = await db.integration_configs.find_one(
+        {"config_id": config_id},
+        {"_id": 0}
+    )
+    
+    return IntegrationConfigResponse(
+        config_id=final_config["config_id"],
+        workspace_id=final_config["workspace_id"],
+        platform=final_config["platform"],
+        status=final_config["status"],
+        last_tested=final_config.get("last_tested"),
+        last_synced=final_config.get("last_synced"),
+        error_message=final_config.get("error_message"),
+        has_credentials=bool(final_config.get("credentials")),
+        connected_by=final_config.get("connected_by"),
+        created_at=final_config.get("created_at"),
+        updated_at=final_config.get("updated_at")
+    )
+
+
+@api_router.post("/workspaces/{workspace_id}/integrations/{config_id}/test")
+async def test_integration(
+    workspace_id: str,
+    config_id: str,
+    user: Dict = Depends(check_role([UserRole.ADMIN, UserRole.GROWTH_LEAD, UserRole.ANALYST_OPS]))
+):
+    """Test an integration connection"""
+    config = await db.integration_configs.find_one(
+        {"config_id": config_id, "workspace_id": workspace_id},
+        {"_id": 0}
+    )
+    
+    if not config:
+        raise HTTPException(status_code=404, detail="Integration config not found")
+    
+    # Test connection
+    try:
+        connector = get_connector(config["platform"], config.get("credentials", {}))
+        connection_success = await connector.connect()
+        
+        if connection_success and not getattr(connector, 'use_mock', False):
+            status = ConnectionStatus.CONNECTED
+            error_message = None
+        else:
+            status = ConnectionStatus.FAILED
+            error_message = "Connection test failed or fell back to mock mode"
+        
+        # Update status
+        await db.integration_configs.update_one(
+            {"config_id": config_id},
+            {"$set": {
+                "status": status.value,
+                "last_tested": now_utc().isoformat(),
+                "error_message": error_message
+            }}
+        )
+        
+        return {
+            "status": status.value,
+            "tested_at": now_utc().isoformat(),
+            "error_message": error_message
+        }
+        
+    except Exception as e:
+        logger.error(f"Integration test failed: {e}")
+        await db.integration_configs.update_one(
+            {"config_id": config_id},
+            {"$set": {
+                "status": ConnectionStatus.FAILED.value,
+                "last_tested": now_utc().isoformat(),
+                "error_message": str(e)
+            }}
+        )
+        return {
+            "status": ConnectionStatus.FAILED.value,
+            "tested_at": now_utc().isoformat(),
+            "error_message": str(e)
+        }
+
+
+@api_router.delete("/workspaces/{workspace_id}/integrations/{config_id}")
+async def delete_integration(
+    workspace_id: str,
+    config_id: str,
+    user: Dict = Depends(check_role([UserRole.ADMIN, UserRole.GROWTH_LEAD]))
+):
+    """Delete an integration configuration"""
+    config = await db.integration_configs.find_one(
+        {"config_id": config_id, "workspace_id": workspace_id},
+        {"_id": 0}
+    )
+    
+    if not config:
+        raise HTTPException(status_code=404, detail="Integration config not found")
+    
+    await db.integration_configs.delete_one({"config_id": config_id})
+    
+    # Get workspace for audit
+    ws = await db.workspaces.find_one({"workspace_id": workspace_id}, {"_id": 0})
+    
+    await log_audit(
+        org_id=ws["org_id"],
+        workspace_id=workspace_id,
+        user_id=user["user_id"],
+        action="integration_deleted",
+        resource_type="integration_config",
+        resource_id=config_id,
+        old_value={"platform": config["platform"]}
+    )
+    
+    return {"message": "Integration deleted successfully"}
+
+
 # ====================
 # CHANNEL & CONNECTOR ROUTES
 # ====================

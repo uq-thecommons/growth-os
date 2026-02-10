@@ -1267,8 +1267,8 @@ async def approve_report(
         }}
     )
     
-    # Get workspace for audit
-    ws = await db.workspaces.find_one({"workspace_id": workspace_id}, {"_id": 0, "org_id": 1})
+    # Get workspace for audit and email
+    ws = await db.workspaces.find_one({"workspace_id": workspace_id}, {"_id": 0})
     
     await log_audit(
         org_id=ws["org_id"],
@@ -1280,6 +1280,27 @@ async def approve_report(
         old_value={"status": report["status"]},
         new_value={"status": ReportStatus.CLIENT_READY.value}
     )
+    
+    # Send email notification to report owner
+    if report.get("owner_id"):
+        owner = await db.users.find_one({"user_id": report["owner_id"]}, {"_id": 0})
+        if owner and owner.get("email"):
+            try:
+                week_start = report.get("week_start", "")
+                if isinstance(week_start, datetime):
+                    week_start = week_start.strftime("%Y-%m-%d")
+                
+                await send_report_approved_notification(
+                    recipient_email=owner["email"],
+                    recipient_name=owner.get("name", "Team Member"),
+                    workspace_name=ws.get("name", "Workspace"),
+                    report_id=report_id,
+                    week_start=week_start,
+                    approved_by_name=user.get("name", "Growth Lead"),
+                    share_link=share_link
+                )
+            except Exception as e:
+                logger.error(f"Failed to send approval notification: {e}")
     
     return await get_report(workspace_id, report_id, user)
 

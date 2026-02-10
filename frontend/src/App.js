@@ -18,6 +18,7 @@ import ReportsPage from "./pages/ReportsPage";
 import ClientPortal from "./pages/ClientPortal";
 import AdminPage from "./pages/AdminPage";
 import FunnelBuilder from "./pages/FunnelBuilder";
+import WorkspaceSettings from "./pages/WorkspaceSettings";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 export const API = `${BACKEND_URL}/api`;

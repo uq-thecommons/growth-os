@@ -535,7 +535,6 @@ export default function ExperimentsPage() {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  </div>
                 </CardContent>
               </Card>
             ))

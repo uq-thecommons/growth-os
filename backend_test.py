@@ -686,25 +686,25 @@ class GrowthOSAPITester:
                 f"Growth Lead failed to create workspace: {status}"
             )
             
-            # Test Growth Lead can manage integrations using existing workspace
-            if self.test_workspace_id:
-                integration_config = {
-                    "platform": "ga4",
-                    "credentials": {"GA4_PROPERTY_ID": "test123"}
-                }
-                
-                success, data, status = self.make_request(
-                    'POST', 
-                    f'workspaces/{self.test_workspace_id}/integrations', 
-                    integration_config
-                )
-                
-                self.log_result(
-                    "Growth Lead Can Manage Integrations", 
-                    success,
-                    f"Growth Lead successfully created integration",
-                    f"Growth Lead failed to create integration: {status}"
-                )
+            # Test Growth Lead can manage integrations using existing workspace they have access to
+            test_workspace_id = "ws_acme_growth"  # Growth Lead has access to this workspace
+            integration_config = {
+                "platform": "ga4",
+                "credentials": {"GA4_PROPERTY_ID": "test123"}
+            }
+            
+            success, data, status = self.make_request(
+                'POST', 
+                f'workspaces/{test_workspace_id}/integrations', 
+                integration_config
+            )
+            
+            self.log_result(
+                "Growth Lead Can Manage Integrations", 
+                success,
+                f"Growth Lead successfully created integration",
+                f"Growth Lead failed to create integration: {status}"
+            )
             
             # Restore original token
             self.session_token = original_token

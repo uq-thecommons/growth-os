@@ -334,8 +334,8 @@ export default function ExperimentsPage() {
                 Create Experiment
               </Button>
             </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
       </div>
 
       {/* Kanban Board */}

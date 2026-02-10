@@ -617,21 +617,56 @@ async def create_workspace(
     )
     
     return {k: v for k, v in workspace_dict.items() if k != "_id"}
+
+
+@api_router.put("/workspaces/{workspace_id}")
 async def update_workspace(
     workspace_id: str,
-    updates: Dict[str, Any],
+    updates: WorkspaceUpdate,
     user: Dict = Depends(check_role([UserRole.ADMIN, UserRole.GROWTH_LEAD]))
 ):
-    """Update workspace settings"""
-    updates["updated_at"] = now_utc().isoformat()
+    """Update workspace/client details"""
+    # Get current workspace
+    current_ws = await db.workspaces.find_one(
+        {"workspace_id": workspace_id},
+        {"_id": 0}
+    )
+    
+    if not current_ws:
+        raise HTTPException(status_code=404, detail="Workspace not found")
+    
+    # Verify growth lead exists if being updated
+    if updates.growth_lead_id:
+        growth_lead = await db.users.find_one(
+            {"user_id": updates.growth_lead_id},
+            {"_id": 0}
+        )
+        if not growth_lead:
+            raise HTTPException(status_code=404, detail="Growth lead not found")
+    
+    # Build update dict
+    update_dict = {k: v for k, v in updates.model_dump(exclude_unset=True).items() if v is not None}
+    update_dict["updated_at"] = now_utc().isoformat()
     
     result = await db.workspaces.update_one(
         {"workspace_id": workspace_id},
-        {"$set": updates}
+        {"$set": update_dict}
     )
     
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Workspace not found")
+    
+    # Log audit
+    await log_audit(
+        org_id=current_ws["org_id"],
+        workspace_id=workspace_id,
+        user_id=user["user_id"],
+        action="workspace_updated",
+        resource_type="workspace",
+        resource_id=workspace_id,
+        old_value=current_ws,
+        new_value={**current_ws, **update_dict}
+    )
     
     return await get_workspace(workspace_id, user)
 

@@ -796,6 +796,12 @@ class GrowthOSAPITester:
         self.test_list_organizations()
         self.test_list_workspaces()
         
+        # NEW: Client Management and Integration Tests
+        self.test_client_management_apis()
+        self.test_integration_config_apis()
+        self.test_rbac_permissions()
+        self.test_auto_connection_testing()
+        
         if self.test_workspace_id:
             self.test_get_workspace_details()
             self.test_command_center()

@@ -339,104 +339,208 @@ export default function ExperimentsPage() {
       </div>
 
       {/* Kanban Board */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 overflow-x-auto pb-4">
-        {STATUSES.map((status) => (
-          <div
-            key={status}
-            className="min-w-[280px]"
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, status)}
-            data-testid={`kanban-column-${status}`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-mono uppercase text-zinc-500 tracking-wider">
-                {status.replace("_", " ")}
-              </h3>
-              <Badge variant="outline" className="border-zinc-700">
-                {getExperimentsByStatus(status).length}
-              </Badge>
-            </div>
+      {viewMode === "kanban" && (
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-4 min-w-max lg:grid lg:grid-cols-5 lg:min-w-0">
+            {STATUSES.map((status) => (
+              <div
+                key={status}
+                className="w-[280px] lg:w-auto flex-shrink-0"
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDrop(e, status)}
+                data-testid={`kanban-column-${status}`}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-mono uppercase text-zinc-500 tracking-wider">
+                    {status.replace("_", " ")}
+                  </h3>
+                  <Badge variant="outline" className="border-zinc-700">
+                    {getExperimentsByStatus(status).length}
+                  </Badge>
+                </div>
 
-            <div className="space-y-3">
-              {getExperimentsByStatus(status).map((exp) => (
-                <Card
-                  key={exp.experiment_id}
-                  className={`${STATUS_COLORS[status]} border cursor-move hover:border-zinc-600 transition-all`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, exp)}
-                  data-testid={`experiment-card-${exp.experiment_id}`}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{exp.name}</p>
-                        {exp.hypothesis && (
-                          <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
-                            We believe {exp.hypothesis.belief}...
-                          </p>
+                <div className="space-y-3">
+                  {getExperimentsByStatus(status).map((exp) => (
+                    <Card
+                      key={exp.experiment_id}
+                      className={`${STATUS_COLORS[status]} border cursor-move hover:border-zinc-600 transition-all`}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, exp)}
+                      data-testid={`experiment-card-${exp.experiment_id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{exp.name}</p>
+                            {exp.hypothesis && (
+                              <p className="text-xs text-zinc-500 mt-1 line-clamp-2">
+                                We believe {exp.hypothesis.belief}...
+                              </p>
+                            )}
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="bg-zinc-900 border-zinc-800">
+                              {STATUSES.filter((s) => s !== status).map((s) => (
+                                <DropdownMenuItem
+                                  key={s}
+                                  onClick={() =>
+                                    updateExperimentStatus(exp.experiment_id, s)
+                                  }
+                                >
+                                  Move to {s.replace("_", " ")}
+                                </DropdownMenuItem>
+                              ))}
+                              {status === "analyzing" && (
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedExperiment(exp);
+                                    setShowDecisionDialog(true);
+                                  }}
+                                  data-testid={`add-decision-${exp.experiment_id}`}
+                                >
+                                  Add Decision
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        {exp.metric_target && (
+                          <div className="mt-3 pt-3 border-t border-zinc-800">
+                            <p className="text-xs text-zinc-500">
+                              Metric: {exp.metric_target}
+                            </p>
+                          </div>
+                        )}
+
+                        {exp.decision && (
+                          <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center gap-2">
+                            <DecisionIcon type={exp.decision.decision_type} />
+                            <span className="text-xs capitalize">
+                              {exp.decision.decision_type}
+                            </span>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+
+                  {getExperimentsByStatus(status).length === 0 && (
+                    <div className="border border-dashed border-zinc-800 rounded-sm p-8 text-center">
+                      <p className="text-xs text-zinc-600">No experiments</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* List View */}
+      {viewMode === "list" && (
+        <div className="space-y-3">
+          {experiments.length === 0 ? (
+            <Card className="bg-zinc-900 border-zinc-800">
+              <CardContent className="p-12 text-center">
+                <p className="text-zinc-500">No experiments yet. Create your first experiment to get started.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            experiments.map((exp) => (
+              <Card
+                key={exp.experiment_id}
+                className={`${STATUS_COLORS[exp.status]} border hover:border-zinc-600 transition-all`}
+              >
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0 space-y-3">
+                      {/* Title and Status */}
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <h3 className="font-medium text-base">{exp.name}</h3>
+                        <Badge 
+                          variant="outline" 
+                          className="border-zinc-700 w-fit text-xs capitalize"
+                        >
+                          {STATUS_LABELS[exp.status]}
+                        </Badge>
+                      </div>
+
+                      {/* Hypothesis */}
+                      {exp.hypothesis && (
+                        <p className="text-sm text-zinc-400">
+                          We believe <span className="text-white">{exp.hypothesis.belief}</span> for{" "}
+                          <span className="text-white">{exp.hypothesis.target}</span> because{" "}
+                          <span className="text-white">{exp.hypothesis.because}</span>
+                        </p>
+                      )}
+
+                      {/* Description */}
+                      {exp.description && (
+                        <p className="text-sm text-zinc-500">{exp.description}</p>
+                      )}
+
+                      {/* Metric and Decision */}
+                      <div className="flex flex-wrap items-center gap-4 text-xs">
+                        {exp.metric_target && (
+                          <div className="flex items-center gap-2">
+                            <span className="text-zinc-500">Metric:</span>
+                            <span className="text-white">{exp.metric_target}</span>
+                          </div>
+                        )}
+                        {exp.decision && (
+                          <div className="flex items-center gap-2">
+                            <DecisionIcon type={exp.decision.decision_type} />
+                            <span className="capitalize text-white">
+                              {exp.decision.decision_type}
+                            </span>
+                          </div>
                         )}
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-zinc-900 border-zinc-800">
-                          {STATUSES.filter((s) => s !== status).map((s) => (
-                            <DropdownMenuItem
-                              key={s}
-                              onClick={() =>
-                                updateExperimentStatus(exp.experiment_id, s)
-                              }
-                            >
-                              Move to {s.replace("_", " ")}
-                            </DropdownMenuItem>
-                          ))}
-                          {status === "analyzing" && (
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedExperiment(exp);
-                                setShowDecisionDialog(true);
-                              }}
-                              data-testid={`add-decision-${exp.experiment_id}`}
-                            >
-                              Add Decision
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
 
-                    {exp.metric_target && (
-                      <div className="mt-3 pt-3 border-t border-zinc-800">
-                        <p className="text-xs text-zinc-500">
-                          Metric: {exp.metric_target}
-                        </p>
-                      </div>
-                    )}
-
-                    {exp.decision && (
-                      <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center gap-2">
-                        <DecisionIcon type={exp.decision.decision_type} />
-                        <span className="text-xs capitalize">
-                          {exp.decision.decision_type}
-                        </span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-
-              {getExperimentsByStatus(status).length === 0 && (
-                <div className="border border-dashed border-zinc-800 rounded-sm p-8 text-center">
-                  <p className="text-xs text-zinc-600">No experiments</p>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+                    {/* Actions Dropdown */}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 flex-shrink-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="bg-zinc-900 border-zinc-800">
+                        {STATUSES.filter((s) => s !== exp.status).map((s) => (
+                          <DropdownMenuItem
+                            key={s}
+                            onClick={() =>
+                              updateExperimentStatus(exp.experiment_id, s)
+                            }
+                          >
+                            Move to {s.replace("_", " ")}
+                          </DropdownMenuItem>
+                        ))}
+                        {exp.status === "analyzing" && (
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedExperiment(exp);
+                              setShowDecisionDialog(true);
+                            }}
+                          >
+                            Add Decision
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Decision Dialog */}
       <Dialog open={showDecisionDialog} onOpenChange={setShowDecisionDialog}>

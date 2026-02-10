@@ -509,6 +509,57 @@ class ChannelCreate(BaseModel):
     name: str
     connector_type: ConnectorType
 
+# ====================
+# INTEGRATION CONFIG
+# ====================
+
+class ConnectionStatus(str, Enum):
+    NOT_CONFIGURED = "not_configured"
+    TESTING = "testing"
+    CONNECTED = "connected"
+    FAILED = "failed"
+    DISCONNECTED = "disconnected"
+
+class IntegrationConfig(BaseDBModel):
+    """Store integration credentials per workspace"""
+    config_id: str = Field(default_factory=lambda: generate_id("intcfg"))
+    workspace_id: str
+    org_id: str
+    platform: ConnectorType  # ga4, meta_ads, google_ads
+    # Credentials (encrypted in production)
+    credentials: Dict[str, Any] = Field(default_factory=dict)
+    # Connection status
+    status: ConnectionStatus = ConnectionStatus.NOT_CONFIGURED
+    last_tested: Optional[datetime] = None
+    last_synced: Optional[datetime] = None
+    error_message: Optional[str] = None
+    # Metadata
+    connected_by: Optional[str] = None
+    created_at: datetime = Field(default_factory=now_utc)
+    updated_at: datetime = Field(default_factory=now_utc)
+
+class IntegrationConfigCreate(BaseModel):
+    platform: ConnectorType
+    credentials: Dict[str, Any]
+
+class IntegrationConfigUpdate(BaseModel):
+    credentials: Optional[Dict[str, Any]] = None
+    status: Optional[ConnectionStatus] = None
+
+class IntegrationConfigResponse(BaseModel):
+    """Response without sensitive credentials"""
+    config_id: str
+    workspace_id: str
+    platform: ConnectorType
+    status: ConnectionStatus
+    last_tested: Optional[datetime] = None
+    last_synced: Optional[datetime] = None
+    error_message: Optional[str] = None
+    has_credentials: bool
+    connected_by: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
 class PlatformObjectRef(BaseDBModel):
     """Reference to platform objects (campaigns, adsets, ads)"""
     ref_id: str = Field(default_factory=lambda: generate_id("ref"))

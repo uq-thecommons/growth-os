@@ -551,7 +551,72 @@ async def get_workspace(
     }
 
 
-@api_router.put("/workspaces/{workspace_id}")
+@api_router.post("/workspaces")
+async def create_workspace(
+    workspace: WorkspaceCreate,
+    org_id: str,
+    user: Dict = Depends(check_role([UserRole.ADMIN, UserRole.GROWTH_LEAD]))
+):
+    """Create a new client workspace"""
+    # Auto-generate slug if not provided
+    slug = workspace.slug or workspace.name.lower().replace(" ", "-").replace("_", "-")
+    
+    # Check if slug exists
+    existing = await db.workspaces.find_one(
+        {"org_id": org_id, "slug": slug},
+        {"_id": 0}
+    )
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Workspace with slug '{slug}' already exists")
+    
+    # Verify growth lead exists if provided
+    if workspace.growth_lead_id:
+        growth_lead = await db.users.find_one(
+            {"user_id": workspace.growth_lead_id},
+            {"_id": 0}
+        )
+        if not growth_lead:
+            raise HTTPException(status_code=404, detail="Growth lead not found")
+    
+    workspace_dict = workspace.model_dump(exclude_unset=True)
+    workspace_dict.update({
+        "workspace_id": generate_id("ws"),
+        "org_id": org_id,
+        "slug": slug,
+        "current_constraint": None,
+        "this_week_focus": [],
+        "settings": {},
+        "is_active": True,
+        "created_at": now_utc().isoformat(),
+        "updated_at": now_utc().isoformat()
+    })
+    
+    await db.workspaces.insert_one(workspace_dict)
+    
+    # Auto-assign growth lead if provided
+    if workspace.growth_lead_id:
+        await db.role_assignments.insert_one({
+            "assignment_id": generate_id("role"),
+            "user_id": workspace.growth_lead_id,
+            "org_id": org_id,
+            "workspace_id": workspace_dict["workspace_id"],
+            "role": UserRole.GROWTH_LEAD.value,
+            "created_at": now_utc().isoformat(),
+            "created_by": user["user_id"]
+        })
+    
+    # Log audit
+    await log_audit(
+        org_id=org_id,
+        workspace_id=workspace_dict["workspace_id"],
+        user_id=user["user_id"],
+        action="workspace_created",
+        resource_type="workspace",
+        resource_id=workspace_dict["workspace_id"],
+        new_value=workspace_dict
+    )
+    
+    return {k: v for k, v in workspace_dict.items() if k != "_id"}
 async def update_workspace(
     workspace_id: str,
     updates: Dict[str, Any],
